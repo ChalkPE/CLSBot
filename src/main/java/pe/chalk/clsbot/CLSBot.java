@@ -37,6 +37,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -44,30 +47,21 @@ import java.util.Properties;
  * @since 2015-09-22
  */
 public class CLSBot implements IReceiverService {
-    public static final String MESSAGE = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n.";
+    public static final String BLANKS = String.join("    ", Collections.nCopies(64, "\n"));
 
     public static void main(String[] args){
         new CLSBot();
     }
 
-    public CLSBot(){
-        BufferedReader propertiesReader = null;
-        Properties properties = new Properties();
+    private Map<Integer, Long> timestamp = new HashMap<>();
 
-        try{
-            propertiesReader = Files.newBufferedReader(Paths.get("CLSBot.properties"), StandardCharsets.UTF_8);
+    public CLSBot(){
+        Properties properties = new Properties();
+        try(BufferedReader propertiesReader = Files.newBufferedReader(Paths.get("CLSBot.properties"), StandardCharsets.UTF_8)){
             properties.load(propertiesReader);
         }catch(IOException e){
             e.printStackTrace();
             return;
-        }finally{
-            if(propertiesReader != null){
-                try{
-                    propertiesReader.close();
-                }catch(IOException e){
-                    e.printStackTrace();
-                }
-            }
         }
 
         BotSettings.setApiToken(properties.get("bot.token").toString());
@@ -75,11 +69,26 @@ public class CLSBot implements IReceiverService {
     }
 
     public void received(Message message){
-        if(message.getMessageType() == MessageType.TEXT_MESSAGE){
-            int recipient = message.isFromGroupChat() ? message.getGroupChat().getId() : message.getSender().getId();
-
-            if(message.getMessage().toString().split(" |@")[0].equals("/cls"))
-                Sender.send(new TextMessage(recipient, message.getSender().getUserName() + ": /cls" + MESSAGE));
+        if(message.getMessageType() != MessageType.TEXT_MESSAGE){
+            return;
         }
+
+        String msg = message.getMessage().toString();
+        if(!msg.split(" |@")[0].equals("/cls")){
+            return;
+        }
+
+        long time = System.currentTimeMillis();
+        int recipient = message.isFromGroupChat() ? message.getGroupChat().getId() : message.getSender().getId();
+        if(timestamp.containsKey(recipient) && (time - timestamp.get(recipient)) < 1500){
+            return;
+        }
+
+        String user = message.getSender().getUserName();
+        user = !user.isEmpty() ? ("@" + user) : (message.getSender().getFirstName() + " " + message.getSender().getLastName());
+
+        Sender.send(new TextMessage(recipient, user + " used " + BLANKS + msg));
+        timestamp.put(recipient, time);
+
     }
 }
