@@ -37,7 +37,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -74,7 +76,12 @@ public class CLSBot implements IReceiverService {
         }
 
         String msg = message.getMessage().toString();
-        if(!msg.split(" |@")[0].equals("/cls")){
+        if(!msg.toLowerCase().startsWith("/cls") && !msg.startsWith("/친")){
+            return;
+        }
+
+        String[] cmd = msg.split(" ");
+        if(cmd[0].contains("@") && !cmd[0].substring(cmd[0].indexOf("@") + 1).equalsIgnoreCase("CLS_BOT")){
             return;
         }
 
@@ -87,8 +94,20 @@ public class CLSBot implements IReceiverService {
         String user = message.getSender().getUserName();
         user = !user.isEmpty() ? ("@" + user) : (message.getSender().getFirstName() + " " + message.getSender().getLastName());
 
-        Sender.send(new TextMessage(recipient, user + " used " + BLANKS + msg));
-        timestamp.put(recipient, time);
+        int days = CLSBot.getSuneungDays();
+        String extra = "\n\n#수능 D" + ((days == 0) ? "-DAY" : String.format("%+d", days));
 
+        Sender.send(new TextMessage(recipient, user + " used " + BLANKS + msg + extra));
+        timestamp.put(recipient, time);
+    }
+
+    public static int getSuneungDays(){
+        Calendar calendar = Calendar.getInstance();
+        Date today = calendar.getTime();
+
+        calendar.set(2015, Calendar.NOVEMBER, 12);
+        Date dDay = calendar.getTime();
+
+        return (int) ((today.getTime() - dDay.getTime()) / (1000 * 60 * 60 * 24));
     }
 }
