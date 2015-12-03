@@ -95,7 +95,7 @@ public class CLSBot implements IReceiverService {
         user = !user.isEmpty() ? ("@" + user) : (message.getSender().getFirstName() + " " + message.getSender().getLastName());
 
         int days = CLSBot.getSuneungDays();
-        String extra = "\n\n#수능 D" + ((days == 0) ? "-DAY" : String.format("%+d", days));
+        String extra = "\n\n#Christmas" + ((days == -1) ? " #eve" : ((days == 0) ? "" : String.format(" D%+d", days)));
 
         Sender.send(new TextMessage(recipient, user + " used " + BLANKS + msg + extra));
         timestamp.put(recipient, time);
@@ -105,7 +105,7 @@ public class CLSBot implements IReceiverService {
         Calendar calendar = Calendar.getInstance();
         Date today = calendar.getTime();
 
-        calendar.set(2015, Calendar.NOVEMBER, 12);
+        calendar.set(2015, Calendar.DECEMBER, 25);
         Date dDay = calendar.getTime();
 
         return (int) ((today.getTime() - dDay.getTime()) / (1000 * 60 * 60 * 24));
