@@ -37,9 +37,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -94,20 +92,7 @@ public class CLSBot implements IReceiverService {
         String user = message.getSender().getUserName();
         user = !user.isEmpty() ? ("@" + user) : (message.getSender().getFirstName() + " " + message.getSender().getLastName());
 
-        int days = CLSBot.getSuneungDays();
-        String extra = "\n\n#Christmas" + ((days == -1) ? " #eve" : ((days == 0) ? "" : String.format(" D%+d", days)));
-
-        Sender.send(new TextMessage(recipient, user + " used " + BLANKS + msg + extra));
+        Sender.send(new TextMessage(recipient, user + " used " + BLANKS + msg + "\n\n#입학 "));
         timestamp.put(recipient, time);
-    }
-
-    public static int getSuneungDays(){
-        Calendar calendar = Calendar.getInstance();
-        Date today = calendar.getTime();
-
-        calendar.set(2015, Calendar.DECEMBER, 25);
-        Date dDay = calendar.getTime();
-
-        return (int) ((today.getTime() - dDay.getTime()) / (1000 * 60 * 60 * 24));
     }
 }
