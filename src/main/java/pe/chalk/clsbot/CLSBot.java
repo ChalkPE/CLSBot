@@ -1,98 +1,95 @@
 /*
- * The MIT License (MIT)
+ * Copyright (C) 2015-2016  ChalkPE
  *
- * Copyright (c) 2015 Chalk
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package pe.chalk.clsbot;
 
-import de.vivistra.telegrambot.model.message.Message;
-import de.vivistra.telegrambot.model.message.MessageType;
-import de.vivistra.telegrambot.model.message.TextMessage;
-import de.vivistra.telegrambot.receiver.IReceiverService;
-import de.vivistra.telegrambot.receiver.Receiver;
-import de.vivistra.telegrambot.sender.Sender;
-import de.vivistra.telegrambot.settings.BotSettings;
+import pe.chalk.telegram.TelegramBot;
+import pe.chalk.telegram.handler.UpdateHandler;
+import pe.chalk.telegram.method.MeGetter;
+import pe.chalk.telegram.method.TextMessageSender;
+import pe.chalk.telegram.type.Update;
+import pe.chalk.telegram.type.message.Message;
+import pe.chalk.telegram.type.message.TextMessage;
+import pe.chalk.telegram.type.user.User;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.logging.Level;
 
 /**
  * @author ChalkPE <amato0617@gmail.com>
  * @since 2015-09-22
  */
-public class CLSBot implements IReceiverService {
+public class CLSBot implements UpdateHandler {
+    public static final List<String> ALIAS = Arrays.asList("/cls", "/clear", "/친");
     public static final String BLANKS = String.join("    ", Collections.nCopies(64, "\n"));
 
-    public static void main(String[] args){
-        new CLSBot();
-    }
-
-    private Map<Integer, Long> timestamp = new HashMap<>();
-
-    public CLSBot(){
-        Properties properties = new Properties();
+    public static void main(String[] args) throws IOException {
+        final Properties properties = new Properties();
         try(BufferedReader propertiesReader = Files.newBufferedReader(Paths.get("CLSBot.properties"), StandardCharsets.UTF_8)){
             properties.load(propertiesReader);
-        }catch(IOException e){
-            e.printStackTrace();
-            return;
         }
 
-        BotSettings.setApiToken(properties.get("bot.token").toString());
-        Receiver.subscribe(this);
+        new CLSBot(properties.getProperty("bot.token"));
     }
 
-    public void received(Message message){
-        if(message.getMessageType() != MessageType.TEXT_MESSAGE){
-            return;
-        }
+    private final TelegramBot bot;
+    private final User me;
+    private final Map<Integer, Long> timestamp = new HashMap<>();
 
-        String msg = message.getMessage().toString();
-        if(!msg.toLowerCase().startsWith("/cls") && !msg.startsWith("/친")){
-            return;
-        }
+    private CLSBot(final String token){
+        this.bot = new TelegramBot(token);
+        this.me = new MeGetter().get(bot);
 
-        String[] cmd = msg.split(" ");
-        if(cmd[0].contains("@") && !cmd[0].substring(cmd[0].indexOf("@") + 1).equalsIgnoreCase("CLS_BOT")){
-            return;
-        }
+        this.bot.initLogger(Level.ALL);
+        this.bot.addHandler(this);
+        this.bot.start();
+    }
 
-        long time = System.currentTimeMillis();
-        int recipient = message.isFromGroupChat() ? message.getGroupChat().getId() : message.getSender().getId();
-        if(timestamp.containsKey(recipient) && (time - timestamp.get(recipient)) < 1500){
-            return;
-        }
+    public void handleMessage(List<Update> updates){
+        updates.forEach(update -> {
+            final Message message = update.getMessage();
+            if(!(message instanceof TextMessage)) return;
 
-        String user = message.getSender().getUserName();
-        user = !user.isEmpty() ? ("@" + user) : (message.getSender().getFirstName() + " " + message.getSender().getLastName());
+            final String text = ((TextMessage) message).getText();
+            if(ALIAS.stream().noneMatch(alias -> text.toLowerCase().startsWith(alias))) return;
 
-        Sender.send(new TextMessage(recipient, user + " used " + BLANKS + msg + "\n\n#입학 "));
-        timestamp.put(recipient, time);
+            final int chatId = message.getChat().getId();
+            if(!message.hasFrom()) return;
+
+            final String[] commands = text.split(" ");
+            if(commands[0].contains("@")){
+                final String[] command = commands[0].split("@");
+                if(!command[1].equalsIgnoreCase(me.getUsername())) return;
+                commands[0] = command[0];
+            }
+            if(ALIAS.stream().noneMatch(alias -> alias.equalsIgnoreCase(commands[0]))) return;
+
+            final long time = System.currentTimeMillis();
+            if(timestamp.containsKey(chatId) && (time - timestamp.get(chatId)) < 1500) return;
+
+            final String user = Objects.isNull(message.getFrom().getUsername()) ? message.getFrom().getFullName() : "@".concat(message.getFrom().getFullName());
+            new TextMessageSender(chatId, String.format("%s used %s%s\n\n%s %s", user, BLANKS, text, "#school", DateCounter.count(2016, Calendar.MARCH, 2))).send(bot);
+
+            timestamp.put(chatId, time);
+        });
     }
 }
