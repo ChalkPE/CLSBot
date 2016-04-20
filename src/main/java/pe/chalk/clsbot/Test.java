@@ -8,6 +8,6 @@ import java.util.Calendar;
  */
 public class Test {
     public static void main(String[] args){
-        System.out.println(DateCounter.count(2016, Calendar.MARCH, 22));
+        System.out.println(DateCounter.count(2016, Calendar.MAY, 5));
     }
 }

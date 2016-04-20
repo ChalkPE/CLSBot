@@ -133,7 +133,10 @@ public class DateCounter {
 
     //long, long
     public static String count(long src, long dest){
-        long days = (src - dest) / (1000 * 60 * 60 * 24);
+        src -= src % 86400000;
+        dest -= dest % 86400000;
+
+        long days = (src - dest) / 86400000;
         return String.format(days == 0 ? "D-DAY" : "D%+d", days);
     }
 }

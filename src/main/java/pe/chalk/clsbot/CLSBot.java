@@ -87,7 +87,7 @@ public class CLSBot implements UpdateHandler {
             if(timestamp.containsKey(chatId) && (time - timestamp.get(chatId)) < 1500) return;
 
             final String user = Objects.isNull(message.getFrom().getUsername()) ? message.getFrom().getFullName() : "@".concat(message.getFrom().getUsername());
-            new TextMessageSender(chatId, String.format("%s used %s%s\n\n%s %s", user, BLANKS, text, "#어린이날", DateCounter.count(2016, Calendar.MARCH, 5))).send(bot);
+            new TextMessageSender(chatId, String.format("%s used %s%s\n\n%s %s", user, BLANKS, text, "#어린이날", DateCounter.count(2016, Calendar.MAY, 5))).send(bot);
 
             timestamp.put(chatId, time);
         });
