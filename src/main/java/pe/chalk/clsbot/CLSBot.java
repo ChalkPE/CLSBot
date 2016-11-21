@@ -66,30 +66,35 @@ public class CLSBot implements UpdateHandler {
 
     public void handleMessage(List<Update> updates){
         updates.forEach(update -> {
-            final Message message = update.getMessage();
-            if(!(message instanceof TextMessage)) return;
+            try {
 
-            final String text = ((TextMessage) message).getText();
-            if(ALIAS.stream().noneMatch(alias -> text.toLowerCase().startsWith(alias))) return;
+                final Message message = update.getMessage();
+                if(!(message instanceof TextMessage)) return;
 
-            final int chatId = message.getChat().getId();
-            if(!message.hasFrom()) return;
+                final String text = ((TextMessage) message).getText();
+                if(ALIAS.stream().noneMatch(alias -> text.toLowerCase().startsWith(alias))) return;
 
-            final String[] commands = text.split(" ");
-            if(commands[0].contains("@")){
-                final String[] command = commands[0].split("@");
-                if(!command[1].equalsIgnoreCase(me.getUsername())) return;
-                commands[0] = command[0];
+                final int chatId = message.getChat().getId();
+                if(!message.hasFrom()) return;
+
+                final String[] commands = text.split(" ");
+                if(commands[0].contains("@")){
+                    final String[] command = commands[0].split("@");
+                    if(!command[1].equalsIgnoreCase(me.getUsername())) return;
+                    commands[0] = command[0];
+                }
+                if(ALIAS.stream().noneMatch(alias -> alias.equalsIgnoreCase(commands[0]))) return;
+
+                final long time = System.currentTimeMillis();
+                if(timestamp.containsKey(chatId) && (time - timestamp.get(chatId)) < 1500) return;
+
+                final String user = Objects.isNull(message.getFrom().getUsername()) ? message.getFrom().getFullName() : "@".concat(message.getFrom().getUsername());
+                new TextMessageSender(chatId, String.format("%s used %s%s\n\n%s %s", user, BLANKS, text, "#Christmas", DateCounter.count(2016, Calendar.DECEMBER, 25))).send(bot);
+
+                timestamp.put(chatId, time);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            if(ALIAS.stream().noneMatch(alias -> alias.equalsIgnoreCase(commands[0]))) return;
-
-            final long time = System.currentTimeMillis();
-            if(timestamp.containsKey(chatId) && (time - timestamp.get(chatId)) < 1500) return;
-
-            final String user = Objects.isNull(message.getFrom().getUsername()) ? message.getFrom().getFullName() : "@".concat(message.getFrom().getUsername());
-            new TextMessageSender(chatId, String.format("%s used %s%s\n\n%s %s", user, BLANKS, text, "#Christmas", DateCounter.count(2016, Calendar.DECEMBER, 25))).send(bot);
-
-            timestamp.put(chatId, time);
         });
     }
 }
