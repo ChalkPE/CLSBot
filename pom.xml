@@ -28,7 +28,7 @@
         <dependency>
             <groupId>com.github.ChalkPE</groupId>
             <artifactId>TelegramBot</artifactId>
-            <version>1.0</version>
+            <version>4de5096d13</version>
         </dependency>
     </dependencies>
 

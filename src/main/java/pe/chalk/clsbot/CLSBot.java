@@ -53,7 +53,7 @@ public class CLSBot implements UpdateHandler {
 
     private final TelegramBot bot;
     private final User me;
-    private final Map<Integer, Long> timestamp = new HashMap<>();
+    private final Map<Long, Long> timestamp = new HashMap<>();
 
     private CLSBot(final String token){
         this.bot = new TelegramBot(token);
@@ -74,7 +74,7 @@ public class CLSBot implements UpdateHandler {
                 final String text = ((TextMessage) message).getText();
                 if(ALIAS.stream().noneMatch(alias -> text.toLowerCase().startsWith(alias))) return;
 
-                final int chatId = message.getChat().getId();
+                final long chatId = message.getChat().getId();
                 if(!message.hasFrom()) return;
 
                 final String[] commands = text.split(" ");
